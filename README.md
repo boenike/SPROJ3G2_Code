@@ -1,4 +1,4 @@
-# SPROJ3G2_Controller
+# SPROJ3G2_Code
 Here I'll try to implement the firmware of our "RC Car" project in C programming language.
 
 MCU -> Raspberry Pi RP2040  
