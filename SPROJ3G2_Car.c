@@ -4,12 +4,13 @@
  * Campus: Sonderborg
  * File: SPROJ3G2_Car.c
  * Author: Bence Toth
- * Date: 03/10/2024
+ * Date: 08/10/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
  * RF module: nRF24L01+
- * RF Library: https://github.com/andyrids/pico-nrf24
+ * RF library: https://github.com/andyrids/pico-nrf24
+ * Servo library: https://www.codeproject.com/Articles/5360397/Raspberry-Pi-Pico-library-for-working-with-servos
  */
 
 // Include necessary libraries
@@ -17,32 +18,49 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
+#include "hardware/pwm.h"
+#include "hardware/clocks.h"
 #include "nrf24l01/nrf24_driver.h"
-//#include "hardware/spi.h"
+#include "servo/rc.h"
+#include "hardware/spi.h"
 //#include "hardware/i2c.h"
 //#include "hardware/timer.h"
 //#include "hardware/uart.h"
 //#include "hardware/irq.h"
 //#include "pico/multicore.h"
 
-#define FREEZE 100
-#define SPI_BAUDRATE 4000000    // 4 MHz
-#define RF_CHANNEL 110          // 2.51 GHz
-#define THRESHOLD 2000
+#define FREEZE 20
+#define SPI_BAUDRATE 4000000    // 4 MHz SPI baudrate
+#define RF_CHANNEL 110          // 2.51 GHz ISM frequency band
+#define SERVO_PIN  8
+#define INIT_ANGLE 90
+#define MAX_ANGLE 180
+#define MIN_ANGLE 0
+#define ADC_MIN 0
+#define ADC_MAX 4096
+#define THRESHOLD ( ADC_MAX / 2 )
 
-int main ( ) {
+typedef struct {
+    uint8_t direction ;
+    uint8_t servo_angle ;
+} payload_t ;
+
+int main ( void ) {
 
     //const uint8_t address [ ] = { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } ;
-    uint8_t pipe_number = 0 , led_state = 0 ;
-    uint16_t payload ;
 
-    // initialize all present standard stdio types
-    stdio_init_all ( ) ;
+    uint8_t pipe_number = 0 ;
+    payload_t Payload = { 1 , INIT_ANGLE } ;
+
+    stdio_init_all ( ) ;    // Initialize all present standard stdio types
 
     gpio_init ( PICO_DEFAULT_LED_PIN ) ;
     gpio_set_dir ( PICO_DEFAULT_LED_PIN , GPIO_OUT ) ;
 
-    // GPIO pin numbers
+    rc_servo Servo = rc_servo_init ( SERVO_PIN ) ;
+    rc_servo_start ( &Servo , INIT_ANGLE ) ;
+
+    // GPIO pin numbers for nRF24L01
     pin_manager_t RF_Pins = { 
         .sck = 2,   // Serial Clock
         .copi = 3,  // Master Out - Slave In
@@ -84,7 +102,7 @@ int main ( ) {
 
     RF24.rx_destination ( DATA_PIPE_0 , ( const uint8_t [ ] ) { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } ) ;
 
-    RF24.payload_size ( DATA_PIPE_0 , sizeof ( payload ) ) ;
+    RF24.payload_size ( DATA_PIPE_0 , sizeof ( Payload ) ) ;
 
     RF24.dyn_payloads_disable ( ) ; // Dynamic payloads disabled
 
@@ -92,10 +110,10 @@ int main ( ) {
 
     while ( 1 ) {
         if ( RF24.is_packet ( &pipe_number ) ) {
-            RF24.read_packet ( &payload , sizeof ( payload ) ) ;
+            RF24.read_packet ( &Payload , sizeof ( Payload ) ) ;
 
-            led_state = ( payload > THRESHOLD ) ? 1 : 0 ;
-            gpio_put ( PICO_DEFAULT_LED_PIN , led_state ) ;
+            gpio_put ( PICO_DEFAULT_LED_PIN , Payload.direction ) ;
+            rc_servo_set_angle ( &Servo , ( uint32_t ) Payload.servo_angle ) ;
         }
     }
     return 0 ;

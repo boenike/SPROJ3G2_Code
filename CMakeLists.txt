@@ -30,6 +30,7 @@ include(pico_sdk_import.cmake)
 
 project(SPROJ3G2_Controller C CXX ASM)
 project(SPROJ3G2_Car C CXX ASM)
+project(Servo_Test C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
@@ -38,8 +39,10 @@ pico_sdk_init()
 
 add_executable(SPROJ3G2_Controller SPROJ3G2_Controller.c)
 add_executable(SPROJ3G2_Car SPROJ3G2_Car.c)
+add_executable(Servo_Test Servo_Test.c)
 
 add_subdirectory(nrf24l01)
+add_subdirectory(servo)
 
 #pico_set_program_name(SPROJ3G2_Code "SPROJ3G2_Code")
 #pico_set_program_version(SPROJ3G2_Code "0.1")
@@ -54,6 +57,9 @@ pico_enable_stdio_usb(SPROJ3G2_Controller 1)
 pico_enable_stdio_uart(SPROJ3G2_Car 1)
 pico_enable_stdio_usb(SPROJ3G2_Car 1)
 
+pico_enable_stdio_uart(Servo_Test 1)
+pico_enable_stdio_usb(Servo_Test 1)
+
 # Add the standard include files to the build
 target_include_directories(SPROJ3G2_Car PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
@@ -65,12 +71,19 @@ target_include_directories(SPROJ3G2_Controller PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
 )
 
+target_include_directories(Servo_Test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
+)
+
 # Add any user requested libraries
 target_link_libraries(SPROJ3G2_Controller 
         pico_stdlib
         hardware_spi
         hardware_i2c
         hardware_adc
+        hardware_pwm
+        servo
         nrf24
         hardware_timer
 )
@@ -80,9 +93,23 @@ target_link_libraries(SPROJ3G2_Car
         hardware_spi
         hardware_i2c
         hardware_adc
+        hardware_pwm
+        servo
+        nrf24
+        hardware_timer
+)
+
+target_link_libraries(Servo_Test 
+        pico_stdlib
+        hardware_spi
+        hardware_i2c
+        hardware_adc
+        hardware_pwm
+        servo
         nrf24
         hardware_timer
 )
 
 pico_add_extra_outputs(SPROJ3G2_Controller)
 pico_add_extra_outputs(SPROJ3G2_Car)
+pico_add_extra_outputs(Servo_Test)

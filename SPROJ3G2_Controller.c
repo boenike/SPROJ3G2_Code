@@ -4,7 +4,7 @@
  * Campus: Sonderborg
  * File: SPROJ3G2_Controller.c
  * Author: Bence Toth
- * Date: 03/10/2024
+ * Date: 08/10/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
@@ -25,11 +25,26 @@
 //#include "hardware/irq.h"
 //#include "pico/multicore.h"
 
-#define ADC_PIN 26
-#define ADC_INPUT 0
-#define FREEZE 100
-#define SPI_BAUDRATE 4000000    // 4 MHz
-#define RF_CHANNEL 110          // 2.51 GHz
+#define POT_X 26
+#define POT_X_INPUT 0
+#define FREEZE 20
+#define INIT_ANGLE 90
+#define MAX_ANGLE 180
+#define MIN_ANGLE 0
+#define ADC_MIN 0
+#define ADC_MAX 4096
+#define THRESHOLD ( ADC_MAX / 2 )
+#define SPI_BAUDRATE 4000000    // 4 MHz SPI baudrate
+#define RF_CHANNEL 110          // 2.51 GHz ISM frequency band
+
+typedef struct {
+    uint8_t direction ;
+    uint8_t servo_angle ;
+} payload_t ;
+
+int32_t convertInterval ( int32_t x , int32_t in_min , int32_t in_max , int32_t out_min , int32_t out_max ) {
+  return ( x - in_min ) * ( out_max - out_min ) / ( in_max - in_min ) + out_min ;
+}
 
 void ADC_Setup ( uint8_t pin , uint8_t input ) {
     adc_init ( ) ;
@@ -37,15 +52,16 @@ void ADC_Setup ( uint8_t pin , uint8_t input ) {
     adc_select_input ( input ) ;        // Select ADC input
 }
 
-int main ( ) {
+int main ( void ) {
 
     //const uint8_t address [ ] = { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } ;
-    uint16_t payload ;
+    uint16_t adc_val ;
+    payload_t Payload = { 1 , INIT_ANGLE } ;
     
     stdio_init_all ( ) ;
-    ADC_Setup ( ADC_PIN , ADC_INPUT ) ;
+    ADC_Setup ( POT_X , POT_X_INPUT ) ;
 
-    // GPIO pin numbers
+    // GPIO pin numbers for nRF24L01
     pin_manager_t RF_Pins = { 
         .sck = 2,   // Serial Clock
         .copi = 3,  // Master Out - Slave In
@@ -85,25 +101,26 @@ int main ( ) {
 
     RF24.initialise ( &RF_Config ) ;
 
-    RF24.payload_size ( DATA_PIPE_0 , sizeof ( payload ) ) ;
+    RF24.payload_size ( DATA_PIPE_0 , sizeof ( Payload ) ) ;
 
     RF24.dyn_payloads_disable ( ) ; // Dynamic payloads disabled
 
     RF24.standby_mode ( ) ;     // TX mode
 
-    fn_status_t success = 0;    // Result of packet transmission
+    fn_status_t success ;    // Result of packet transmission
+
+    // send to receiver's selected pipe address
+    RF24.tx_destination ( ( const uint8_t [ ] ) { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } ) ;
 
     while ( 1 ) {
-        payload = adc_read ( ) ;
-        
-        // send to receiver's selected pipe address
-        RF24.tx_destination ( ( const uint8_t [ ] ) { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } ) ;
+        adc_val = adc_read ( ) ;
+        Payload.servo_angle = ( uint8_t ) convertInterval ( ( int32_t ) adc_val , ADC_MIN , ADC_MAX , MIN_ANGLE , MAX_ANGLE ) ;
+        Payload.direction = ( adc_val > THRESHOLD ) ? 1 : 0 ;
 
         // send packet to receiver's DATA_PIPE_0 address
-        success = RF24.send_packet ( &payload , sizeof ( payload ) ) ;
-        //printf ( "RF PACKET SENT\n" ) ;
+        success = RF24.send_packet ( &Payload , sizeof ( Payload ) ) ;
 
-        sleep_ms ( FREEZE ) ;
+        //sleep_ms ( FREEZE ) ;
     }
     return 0 ;
 }
