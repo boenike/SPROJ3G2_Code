@@ -33,7 +33,10 @@
 #define MIN_ANGLE 0
 #define ADC_MIN 0
 #define ADC_MAX 4096
+#define TOLERANCE 150
 #define THRESHOLD ( ADC_MAX / 2 )
+#define LOW_LIMIT ( THRESHOLD - TOLERANCE )
+#define HIGH_LIMIT ( THRESHOLD + TOLERANCE )
 #define SPI_BAUDRATE 4000000    // 4 MHz SPI baudrate
 #define RF_CHANNEL 110          // 2.51 GHz ISM frequency band
 
@@ -114,8 +117,16 @@ int main ( void ) {
 
     while ( 1 ) {
         adc_val = adc_read ( ) ;
-        Payload.servo_angle = ( uint8_t ) convertInterval ( ( int32_t ) adc_val , ADC_MIN , ADC_MAX , MIN_ANGLE , MAX_ANGLE ) ;
-        Payload.direction = ( adc_val > THRESHOLD ) ? 1 : 0 ;
+
+        if ( adc_val >= HIGH_LIMIT || adc_val <= LOW_LIMIT ) {
+            Payload.servo_angle = ( uint8_t ) convertInterval ( ( int32_t ) adc_val , ADC_MIN , ADC_MAX , MIN_ANGLE , MAX_ANGLE ) ;
+            Payload.direction = ( adc_val > THRESHOLD ) ? 1 : 0 ;
+        }
+
+        else {
+            Payload.servo_angle = INIT_ANGLE ;
+            Payload.direction = 1 ;
+        }
 
         // send packet to receiver's DATA_PIPE_0 address
         success = RF24.send_packet ( &Payload , sizeof ( Payload ) ) ;
