@@ -4,7 +4,7 @@
  * Campus: Sonderborg
  * File: SPROJ3G2_Controller.c
  * Author: Bence Toth
- * Date: 08/10/2024
+ * Date: 09/10/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
@@ -33,7 +33,7 @@
 #define MIN_ANGLE 0
 #define ADC_MIN 0
 #define ADC_MAX 4096
-#define TOLERANCE 150
+#define TOLERANCE 50
 #define THRESHOLD ( ADC_MAX / 2 )
 #define LOW_LIMIT ( THRESHOLD - TOLERANCE )
 #define HIGH_LIMIT ( THRESHOLD + TOLERANCE )
@@ -128,6 +128,7 @@ int main ( void ) {
             Payload.direction = 1 ;
         }
 
+        //printf ( "ADC: %d\n" , adc_val ) ;
         // send packet to receiver's DATA_PIPE_0 address
         success = RF24.send_packet ( &Payload , sizeof ( Payload ) ) ;
 
