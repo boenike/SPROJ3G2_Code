@@ -26,6 +26,9 @@
 #define RF_ADDRESS ( ( const uint8_t [ ] ) { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } )
 #define FREEZE 20
 
+extern pin_manager_t RF_Pins ;
+extern nrf_manager_t RF_Config ;
+
 typedef struct {                // The payload structure for transmission
     uint8_t direction ;
     uint8_t servo_angle ;
