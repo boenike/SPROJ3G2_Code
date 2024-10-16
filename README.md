@@ -1,5 +1,5 @@
 # SPROJ3G2_Code
-Here I'll try to implement the communication-side firmware of our "RC Car" project in C programming language.
+Here we'll try to implement the communication-side firmware of our "RC Car" project in C programming language.
 
 MCU -> Raspberry Pi RP2040  
 
@@ -14,3 +14,5 @@ Semester: 3rd
 Course: BEng in Electronics
 
 Finish date: 2024/Dec/23
+
+Authors: Bence Tóth and Iliya Iliev
