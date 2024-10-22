@@ -72,7 +72,6 @@ target_link_libraries(SPROJ3G2_Controller
         hardware_i2c
         hardware_adc
         hardware_pwm
-        servo
         nrf24
         functions
         hardware_timer
@@ -84,7 +83,7 @@ target_link_libraries(SPROJ3G2_Car
         hardware_i2c
         hardware_adc
         hardware_pwm
-        servo
+        Servo_Iliya
         nrf24
         functions
         hardware_timer

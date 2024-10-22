@@ -3,8 +3,8 @@
  * Institution: University of Southern Denmark (SDU)
  * Campus: Sonderborg
  * File: SPROJ3G2_Controller.c
- * Author: Bence Toth
- * Date: 10/10/2024
+ * Author: Bence Toth and Iliya Iliev
+ * Date: 22/10/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
@@ -32,6 +32,10 @@ payload_t Payload = { 1 , INIT_ANGLE } ;
 nrf_client_t RF24 ;
 fn_status_t success ;    // Result of packet transmission
 
+const uint16_t THRESHOLD  = ADC_MAX / 2 ;
+const uint16_t LOW_LIMIT  = THRESHOLD - TOLERANCE ;
+const uint16_t HIGH_LIMIT = THRESHOLD + TOLERANCE ;
+
 int main ( void ) {
 
     stdio_init_all ( ) ;
@@ -54,7 +58,7 @@ int main ( void ) {
             Payload.direction = 1 ;
         }
 
-        printf ( "ADC: %u <-> Angle: %u\n" , Pot_X_Val , Payload.servo_angle ) ;
+        //printf ( "ADC: %u <-> Angle: %u\n" , Pot_X_Val , Payload.servo_angle ) ;
         // send packet to receiver's DATA_PIPE_0 address
         success = RF24.send_packet ( &Payload , sizeof ( Payload ) ) ;
 
