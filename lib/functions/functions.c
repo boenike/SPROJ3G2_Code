@@ -5,6 +5,8 @@
 #include "nrf24_driver.h"
 #include "functions.h"
 
+const uint8_t *RF_ADDRESS = ( const uint8_t [ ] ) { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } ;
+
 // GPIO pin numbers for nRF24L01
 pin_manager_t RF_Pins = { 
     .sck = 2,   // Serial Clock
@@ -63,6 +65,7 @@ uint16_t read_ADC ( uint8_t pin ) {
 void nRF24_Setup ( nrf_client_t *RF24_ptr , pin_manager_t *RF24_pins_ptr ,
                     nrf_manager_t *RF24_config_ptr , uint32_t baudrate_SPI , size_t payload_size ,
                     RF_Mode mode , dyn_payloads_t dyn_mode , const uint8_t *address_buffer , data_pipe_t datapipe ) {
+                        
     nrf_driver_create_client ( RF24_ptr ) ;
     RF24_ptr->configure ( RF24_pins_ptr , baudrate_SPI ) ;      // Set up the correct pinout and set the SPI baudrate
     RF24_ptr->initialise ( RF24_config_ptr ) ;                  // Initialize the nRF24 module with the stated configuration

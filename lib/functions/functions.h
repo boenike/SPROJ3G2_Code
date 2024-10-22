@@ -16,18 +16,15 @@
 #define MAX_ANGLE 180
 #define MIN_ANGLE 0
 #define ADC_MIN 0
-#define ADC_MAX 4096
+#define ADC_MAX 4095
 #define TOLERANCE 50
-#define THRESHOLD ( ADC_MAX / 2 )
-#define LOW_LIMIT ( THRESHOLD - TOLERANCE )
-#define HIGH_LIMIT ( THRESHOLD + TOLERANCE )
 #define SPI_BAUDRATE 4000000    // 4 MHz SPI baudrate
 #define RF_CHANNEL 110          // 2.51 GHz ISM frequency band
-#define RF_ADDRESS ( ( const uint8_t [ ] ) { 0x37 , 0x37 , 0x37 , 0x37 , 0x37 } )
 #define FREEZE 20
 
 extern pin_manager_t RF_Pins ;
 extern nrf_manager_t RF_Config ;
+extern const uint8_t *RF_ADDRESS ;
 
 typedef struct {                // The payload structure for transmission
     uint8_t direction ;
