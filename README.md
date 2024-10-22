@@ -7,8 +7,6 @@ Framework -> RP2040 C SDK
 
 [nRF24L01 library](https://github.com/andyrids/pico-nrf24)
 
-[Servo library](https://www.codeproject.com/Articles/5360397/Raspberry-Pi-Pico-library-for-working-with-servos)
-
 Semester: 3rd
 
 Course: BEng in Electronics
