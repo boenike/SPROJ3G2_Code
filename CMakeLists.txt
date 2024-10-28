@@ -74,6 +74,7 @@ target_link_libraries(SPROJ3G2_Controller
         hardware_pwm
         nrf24
         functions
+        ssd1306
         hardware_timer
 )
 
@@ -86,6 +87,7 @@ target_link_libraries(SPROJ3G2_Car
         Servo_Iliya
         nrf24
         functions
+        ssd1306
         hardware_timer
 )
 
