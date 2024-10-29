@@ -7,6 +7,8 @@ Framework -> RP2040 C SDK
 
 [nRF24L01 library](https://github.com/andyrids/pico-nrf24)
 
+[SSD1306 library](https://github.com/daschr/pico-ssd1306)
+
 Semester: 3rd
 
 Course: BEng in Electronics
