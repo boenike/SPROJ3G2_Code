@@ -25,8 +25,11 @@
 #define SPI_BAUDRATE 4000000    // 4 MHz SPI baudrate
 #define I2C_BAUDRATE 400000     // 400 kHz I2C baudrate
 #define RF_CHANNEL 110          // 2.51 GHz ISM frequency band
-#define RET_LIMIT 3000          // Defines the number of payloads to be delivered before an echo from the primary receiver
+#define RET_LIMIT 5000          // Defines the number of payloads to be delivered before an echo from the primary receiver
 #define FREEZE 20
+#define FONT_SCALE 2
+#define INTERVAL_LIMIT 100      // Defines the maximum time interval between consecutive received data packets 
+#define TEST_LED 7
 
 typedef struct {                // The payload structure for transmission
     uint8_t direction ;

@@ -85,9 +85,9 @@ void nRF24_Setup ( nrf_client_t *RF24_ptr , pin_manager_t *RF24_pins_ptr , nrf_m
             break ;
 
         case DYNPD_DISABLE :
-        default :
             RF24_ptr->dyn_payloads_disable ( ) ;
             break ;
+        default : break ;
     }
 }
 
@@ -104,11 +104,12 @@ void nRF24_Comm_Dir_Setup ( nrf_client_t *RF24_ptr , RF_Mode mode , size_t paylo
             break ;
 
         case RF24_TX :
-        default :
             RF24_ptr->rx_destination ( echo_pipe , echo_address ) ;
             RF24_ptr->tx_destination ( payload_address ) ;
-            RF24_ptr->standby_mode  ( ) ;
+            RF24_ptr->standby_mode ( ) ;
             break ;
+
+        default : break ;
     }
 }
 
@@ -128,4 +129,5 @@ void OLED_Setup ( oled_pins_t *oled_pins , ssd1306_t *oled_ptr ) {
     oled_ptr->external_vcc = false ;
     ssd1306_init ( oled_ptr , OLED_WIDTH , OLED_HEIGHT , OLED_ADDRESS , current_i2c_instance ) ;
     ssd1306_clear ( oled_ptr ) ;
+    ssd1306_show ( oled_ptr ) ;
 }
