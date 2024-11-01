@@ -25,15 +25,15 @@
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "nrf24_driver.h"
-#include "functions.h"
 #include "ssd1306.h"
+#include "functions.h"
 //#include "hardware/timer.h"
 //#include "hardware/uart.h"
 //#include "hardware/irq.h"
 //#include "pico/multicore.h"
 
-uint8_t ADC_Pins [ ] = { 26 , 27 } , car_connected = 0 ;
-uint16_t RT_count = 0 ;
+uint8_t ADC_Pins [ ] = { 26 , 27 } ;
+uint8_t car_connected = 0 , retr_lim_reached = 0 , RT_count = 0 ;
 
 payload_t Payload = { .direction = 1 , .servo_angle = INIT_ANGLE } ;
 
@@ -48,39 +48,43 @@ int main ( void ) {
     uint8_t adc_setup = ADC_Setup ( ADC_Pins , sizeof ( ADC_Pins ) ) ;
     hard_assert ( adc_setup == 1 ) ;
 
-    OLED_Setup ( &OLED_Pins , &OLED ) ;
-    draw_Initial_Texts ( &OLED ) ;
-    draw_Car_Status ( &OLED , car_connected ) ;
+    uint8_t oled_setup = OLED_Setup ( &OLED_Pins , &OLED ) ;
+    hard_assert ( oled_setup == 1 ) ;
 
-    nRF24_Setup ( &RF24 , &RF_Pins , &RF_Config , SPI_BAUDRATE , ACK_ON , RF24_TX , sizeof ( payload_t ) , ( data_pipe_t ) payload_pipe , PAYLOAD_ADDRESS ) ;
+    draw_Initial_Texts ( &OLED ) ;
+
+    uint16_t rf_setup = nRF24_Setup ( &RF24 , &RF_Pins , &RF_Config , ACK_ON ,
+        PTX , sizeof ( payload_t ) , ( data_pipe_t ) payload_pipe , PAYLOAD_ADDRESS ) ;
+    hard_assert ( rf_setup == RF_SETUP_OK ) ;
 
     while ( 1 ) {
         set_Payload_Data ( &Payload , POT_X_PIN ) ;
 
         // Send the packet to the Receiver's payload address
         success = RF24.send_packet ( &Payload , sizeof ( payload_t ) ) ;
-        printf ( "Work - %d\n" , ( uint8_t ) success ) ;
-        
-        /*switch ( success ) {
-            case SPI_MNGR_OK :
+        //printf ( "%d - %s\n" , ( uint8_t ) success , ( success ) ? "ON---" : "OFF" ) ;
+
+        switch ( success ) {
+            case NRF_MNGR_OK :
                 if ( !car_connected ) {
                     car_connected = 1 ;
-                    RT_count = 0 ;
-                    draw_Car_Status ( &OLED , car_connected ) ;
+                    retr_lim_reached = 0 ;
+                    update_Car_Status ( &OLED , car_connected ) ;
                 }
                 break ;
             case ERROR :
-                if ( car_connected ) {
-                    RT_count++ ; 
+                if ( !retr_lim_reached ) {
+                    RT_count++ ;
                     if ( RT_count == MAX_RT_TRY ) {
+                        retr_lim_reached = 1 ;
+                        RT_count = 0 ;
                         car_connected = 0 ;
-                        draw_Car_Status ( &OLED , car_connected ) ;
+                        update_Car_Status ( &OLED , car_connected ) ;
                     }
                 }
                 break ;
             default : break ;
-        }*/
-        //printf ( "%d\n" , car_connected ) ;
+        }
     }
     return 0 ;
 }

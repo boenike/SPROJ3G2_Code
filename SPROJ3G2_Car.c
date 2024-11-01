@@ -37,9 +37,7 @@
 //#include "pico/multicore.h"
 
 payload_t Payload = { .direction = 1 , .servo_angle = INIT_ANGLE } ;
-//echo_t Echo = { .echo = 0 } ;
 
-//uint16_t rec_packets = 0 ;
 uint8_t car_stopped = 0 ;
 uint32_t currentTime , prevTime = 0 ;
 
@@ -56,25 +54,27 @@ int main ( void ) {
 
     servo_init ( SERVO_PIN ) ;
 
-    nRF24_Setup ( &RF24 , &RF_Pins , &RF_Config , SPI_BAUDRATE , ACK_ON , RF24_RX , sizeof ( payload_t ) , ( data_pipe_t ) payload_pipe , PAYLOAD_ADDRESS ) ;
+    uint16_t rf_setup = nRF24_Setup ( &RF24 , &RF_Pins , &RF_Config , ACK_OFF ,
+        PRX , sizeof ( payload_t ) , ( data_pipe_t ) payload_pipe , PAYLOAD_ADDRESS ) ;
+    hard_assert ( rf_setup == RF_SETUP_OK ) ;
 
     while ( 1 ) {
-        
+
         currentTime = to_ms_since_boot ( get_absolute_time ( ) ) ;
 
         // If the time delay between two consecutive data packets is
         // greater than the predetermined value, set the car into initial conditions
 
         if ( ( currentTime - prevTime ) > INTERVAL_LIMIT && !car_stopped ) {
+            car_stopped = 1 ;
             set_servo_angle(INIT_ANGLE , SERVO_PIN ) ;
             gpio_put ( PICO_DEFAULT_LED_PIN , 1 ) ;
-            car_stopped = 1 ;
         }
 
         if ( RF24.is_packet ( &payload_pipe ) ) {
-            RF24.read_packet ( &Payload , sizeof ( payload_t ) ) ;
-            prevTime = to_ms_since_boot ( get_absolute_time ( ) ) ;
             car_stopped = 0 ;
+            success = RF24.read_packet ( &Payload , sizeof ( payload_t ) ) ;
+            prevTime = to_ms_since_boot ( get_absolute_time ( ) ) ;
             gpio_put ( PICO_DEFAULT_LED_PIN , Payload.direction ) ;
             set_servo_angle ( Payload.servo_angle , SERVO_PIN ) ;
         }
