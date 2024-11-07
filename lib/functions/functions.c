@@ -4,6 +4,8 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
+#include "hardware/uart.h"
+#include "hardware/irq.h"
 #include "nrf24_driver.h"
 #include "ssd1306.h"
 #include "functions.h"
@@ -38,13 +40,13 @@ nrf_manager_t RF_Config = {
     .dyn_payloads = DYNPD_DISABLE ,
 
     // Air Data Rate: RF_DR_250KBPS, RF_DR_1MBPS, RF_DR_2MBPS
-    .data_rate = RF_DR_2MBPS ,
+    .data_rate = RF_DR_1MBPS ,
 
     // Output Power: RF_PWR_NEG_18DBM, RF_PWR_NEG_12DBM, RF_PWR_NEG_6DBM, RF_PWR_0DBM
     .power = RF_PWR_NEG_12DBM ,
 
     // Retransmission Count: ARC_NONE...ARC_15RT
-    .retr_count = ARC_2RT ,
+    .retr_count = ARC_10RT ,
 
     // Retransmission Delay: ARD_250US, ARD_500US, ARD_750US, ARD_1000US
     .retr_delay = ARD_500US
@@ -196,10 +198,48 @@ void draw_Initial_Texts ( ssd1306_t *oled_ptr ) {
     ssd1306_show ( oled_ptr ) ;
 }
 
-void update_Car_Status ( ssd1306_t *oled_ptr , uint8_t status ) {
+void update_Car_Status ( ssd1306_t *oled_ptr , uint8_t car_status , uint8_t charging_status ) {
+
     ssd1306_clear ( oled_ptr ) ;
     ssd1306_draw_string ( oled_ptr , 0 , 0 , FONT_SCALE , "Car:" ) ;
-    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "Bat:" ) ;
-    ssd1306_draw_string ( oled_ptr , 60 , 0 , FONT_SCALE , ( status ) ? "ON" : "OFF" ) ;
+    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "Charge:" ) ;
+
+    ssd1306_draw_string ( oled_ptr , 60 , 0 , FONT_SCALE , ( car_status ) ? "ON" : "OFF" ) ;
+    ssd1306_draw_string ( oled_ptr , 90 , 28 , FONT_SCALE , ( charging_status ) ? "Yes" : "NO" ) ;
+
     ssd1306_show ( oled_ptr ) ;
+}
+
+void UART_Setup ( uart_inst_t *chosen_uart_instance_id , uint chosen_baudrate , uint RX_pin , uint TX_pin , irq_handler_t rx_isr ) {
+
+    // Set up the UART with the selected baudrate
+    uint __unused actual_baudrate = uart_init ( chosen_uart_instance_id , chosen_baudrate ) ;
+
+    //uart_write_blocking
+    //uart_putc_raw
+    //uart_putc
+    //uart_puts
+
+    // Set the TX and RX pins by using the function select on the GPIO
+    gpio_set_function ( TX_pin , UART_FUNCSEL_NUM ( chosen_uart_instance_id , TX_pin ) ) ;
+    gpio_set_function ( RX_pin , UART_FUNCSEL_NUM ( chosen_uart_instance_id, RX_pin ) ) ;
+
+    // Turn off UART flow control CTS/RTS
+    uart_set_hw_flow ( chosen_uart_instance_id , false , false ) ;
+
+    // Set the desired data format
+    uart_set_format ( chosen_uart_instance_id , DATA_BITS , STOP_BITS , PARITY ) ;
+
+    // Turn on FIFO on specified UART port
+    uart_set_fifo_enabled ( chosen_uart_instance_id , true ) ;
+
+    // Select correct interrupt for the UART port used
+    uint UART_IRQ = ( chosen_uart_instance_id == uart0 ) ? UART0_IRQ : UART1_IRQ ;
+
+    // And set up and enable the interrupt handlers
+    irq_set_exclusive_handler ( UART_IRQ , rx_isr ) ;
+    irq_set_enabled ( UART_IRQ , true ) ;
+
+    // Enable the UART port to send interrupts - RX only
+    uart_set_irq_enables ( chosen_uart_instance_id , true , false ) ;
 }

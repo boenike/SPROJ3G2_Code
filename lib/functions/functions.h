@@ -5,8 +5,20 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
+#include "hardware/uart.h"
+#include "hardware/irq.h"
 #include "nrf24_driver.h"
 #include "ssd1306.h"
+
+#define RX_THRESH 100
+
+#define UART_ID uart0
+#define UART_TX_PIN 12
+#define UART_RX_PIN 13
+#define UART_BAUDRATE 9600
+#define DATA_BITS 8
+#define STOP_BITS 1
+#define PARITY UART_PARITY_NONE
 
 #define SERVO_PIN  8
 #define ADC_REF_PIN 26
@@ -24,7 +36,7 @@
 #define SPI_BAUDRATE 4000000            // 4 MHz SPI baudrate
 #define RF_CHANNEL 50                   // ISM frequency band
 #define INTERVAL_LIMIT 50               // Defines the maximum time interval between consecutive received data packets for the Car
-#define MAX_RT_TRY 15                   // Defines the maximum Retransmission count of the Controller
+#define MAX_RT_TRY 30                   // Defines the maximum Retransmission count of the Controller
 #define RF_SETUP_OK 0b0000001111111111  // Checks if all RF setup functions returned the correct values
 
 #define OLED_WIDTH 128
@@ -69,7 +81,9 @@ uint8_t OLED_Setup ( oled_pins_t *oled_pins , ssd1306_t *oled_ptr ) ;
 
 void draw_Initial_Texts ( ssd1306_t *oled_ptr ) ;
 
-void update_Car_Status ( ssd1306_t *oled_ptr , uint8_t status ) ;
+void update_Car_Status ( ssd1306_t *oled_ptr , uint8_t car_status , uint8_t charging_status ) ;
+
+void UART_Setup ( uart_inst_t *chosen_uart_instance_id , uint chosen_baudrate , uint RX_pin , uint TX_pin , irq_handler_t rx_isr ) ;
 
 #ifdef __cplusplus
 }
