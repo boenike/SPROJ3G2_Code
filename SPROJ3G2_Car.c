@@ -4,7 +4,7 @@
  * Campus: Sonderborg
  * File: SPROJ3G2_Car.c
  * Authors: Bence Toth and Iliya Iliev
- * Date: 31/10/2024
+ * Date: 07/11/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
@@ -46,7 +46,7 @@ fn_status_t success ;    // Result of packet transmission
 
 int main ( void ) {
 
-    stdio_init_all ( ) ;    // Initialize all present standard stdio types
+    hard_assert ( stdio_init_all ( ) ) ;    // Initialize all present standard stdio types
 
     gpio_init ( PICO_DEFAULT_LED_PIN ) ;
     gpio_set_dir ( PICO_DEFAULT_LED_PIN , GPIO_OUT ) ;

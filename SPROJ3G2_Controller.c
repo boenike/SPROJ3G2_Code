@@ -4,7 +4,7 @@
  * Campus: Sonderborg
  * File: SPROJ3G2_Controller.c
  * Authors: Bence Toth and Iliya Iliev
- * Date: 31/10/2024
+ * Date: 07/11/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
@@ -24,16 +24,17 @@
 #include "hardware/adc.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
+#include "hardware/uart.h"
+#include "hardware/irq.h"
 #include "nrf24_driver.h"
 #include "ssd1306.h"
 #include "functions.h"
 //#include "hardware/timer.h"
-//#include "hardware/uart.h"
-//#include "hardware/irq.h"
 //#include "pico/multicore.h"
 
 uint8_t ADC_Pins [ ] = { 26 , 27 } ;
-uint8_t car_connected = 0 , retr_lim_reached = 0 , RT_count = 0 ;
+uint8_t retr_lim_reached = 0 , RT_count = 0 ;
+volatile uint8_t car_connected = 0 , charge_state = 0 , rec_val , charge_print = 0 , led = 0 ;
 
 payload_t Payload = { .direction = 1 , .servo_angle = INIT_ANGLE } ;
 
@@ -41,9 +42,25 @@ ssd1306_t OLED ;
 nrf_client_t RF24 ;
 fn_status_t success ;    // Result of packet transmission
 
+void UART_RX_ISR ( void ) {
+    if ( uart_is_readable ( UART_ID ) ) {
+        rec_val = uart_getc ( UART_ID ) ;
+        charge_state = ( rec_val >= RX_THRESH ) ? 1 : 0 ;
+        charge_print = 1 ;
+        led = led ? 0 : 1 ;
+        gpio_put ( 7 , led ) ;
+    }
+}
+
 int main ( void ) {
 
-    stdio_init_all ( ) ;
+    hard_assert ( stdio_init_all ( ) ) ;
+
+    gpio_init ( 7 ) ;
+    gpio_set_dir ( 7 , GPIO_OUT ) ;
+    gpio_put ( PICO_DEFAULT_LED_PIN , led ) ;
+
+    UART_Setup ( UART_ID , UART_BAUDRATE , UART_RX_PIN , UART_TX_PIN , UART_RX_ISR ) ;
 
     uint8_t adc_setup = ADC_Setup ( ADC_Pins , sizeof ( ADC_Pins ) ) ;
     hard_assert ( adc_setup == 1 ) ;
@@ -60,16 +77,24 @@ int main ( void ) {
     while ( 1 ) {
         set_Payload_Data ( &Payload , POT_X_PIN ) ;
 
+        /*uart_putc_raw ( UART_ID , uartval ) ;
+        uartval++ ;
+        if ( uartval == 250 ) uartval = 0 ;*/
+
         // Send the packet to the Receiver's payload address
         success = RF24.send_packet ( &Payload , sizeof ( payload_t ) ) ;
-        //printf ( "%d - %s\n" , ( uint8_t ) success , ( success ) ? "ON---" : "OFF" ) ;
+        //printf ( "%d - %s\n" , ( uint8_t ) success , ( success ) ? "ON---" : "      OFF" ) ;
+
+        if ( charge_print ) {
+            update_Car_Status ( &OLED , car_connected , charge_state ) ;
+            charge_print = 0 ; }
 
         switch ( success ) {
             case NRF_MNGR_OK :
                 if ( !car_connected ) {
                     car_connected = 1 ;
                     retr_lim_reached = 0 ;
-                    update_Car_Status ( &OLED , car_connected ) ;
+                    update_Car_Status ( &OLED , car_connected , charge_state ) ;
                 }
                 break ;
             case ERROR :
@@ -79,7 +104,7 @@ int main ( void ) {
                         retr_lim_reached = 1 ;
                         RT_count = 0 ;
                         car_connected = 0 ;
-                        update_Car_Status ( &OLED , car_connected ) ;
+                        update_Car_Status ( &OLED , car_connected , charge_state ) ;
                     }
                 }
                 break ;

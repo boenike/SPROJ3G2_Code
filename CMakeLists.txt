@@ -72,6 +72,8 @@ target_link_libraries(SPROJ3G2_Controller
         hardware_i2c
         hardware_adc
         hardware_pwm
+        hardware_uart
+        hardware_irq
         nrf24
         functions
         ssd1306
