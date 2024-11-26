@@ -34,7 +34,7 @@
 
 uint8_t ADC_Pins [ ] = { 26 , 27 } ;
 uint8_t retr_lim_reached = 0 , RT_count = 0 ;
-volatile uint8_t car_connected = 0 , charge_state = 0 , rec_val , charge_print = 0 , led = 0 ;
+volatile uint8_t car_connected = 0 , charge_state = 0 , rec_val , charge_print = 0 ;
 
 payload_t Payload = { .direction = 1 , .servo_angle = INIT_ANGLE } ;
 
@@ -45,10 +45,10 @@ fn_status_t success ;    // Result of packet transmission
 void UART_RX_ISR ( void ) {
     if ( uart_is_readable ( UART_ID ) ) {
         rec_val = uart_getc ( UART_ID ) ;
-        charge_state = ( rec_val >= RX_THRESH ) ? 1 : 0 ;
+        charge_state = ( rec_val ) ? 1 : 0 ;
         charge_print = 1 ;
-        led = led ? 0 : 1 ;
-        gpio_put ( 7 , led ) ;
+        //led = led ? 0 : 1 ;
+        //gpio_put ( 7 , led ) ;
     }
 }
 
@@ -56,34 +56,25 @@ int main ( void ) {
 
     hard_assert ( stdio_init_all ( ) ) ;
 
-    gpio_init ( 7 ) ;
-    gpio_set_dir ( 7 , GPIO_OUT ) ;
-    gpio_put ( PICO_DEFAULT_LED_PIN , led ) ;
-
     UART_Setup ( UART_ID , UART_BAUDRATE , UART_RX_PIN , UART_TX_PIN , UART_RX_ISR ) ;
 
-    uint8_t adc_setup = ADC_Setup ( ADC_Pins , sizeof ( ADC_Pins ) ) ;
-    hard_assert ( adc_setup == 1 ) ;
+    hard_assert ( ADC_Setup ( ADC_Pins , sizeof ( ADC_Pins ) ) ) ;
 
-    uint8_t oled_setup = OLED_Setup ( &OLED_Pins , &OLED ) ;
-    hard_assert ( oled_setup == 1 ) ;
-
-    draw_Initial_Texts ( &OLED ) ;
+    hard_assert ( OLED_Setup ( &OLED_Pins , &OLED ) ) ;
 
     uint16_t rf_setup = nRF24_Setup ( &RF24 , &RF_Pins , &RF_Config , ACK_ON ,
         PTX , sizeof ( payload_t ) , ( data_pipe_t ) payload_pipe , PAYLOAD_ADDRESS ) ;
+        
     hard_assert ( rf_setup == RF_SETUP_OK ) ;
 
-    while ( 1 ) {
-        set_Payload_Data ( &Payload , POT_X_PIN ) ;
+    draw_Initial_Texts ( &OLED ) ;
 
-        /*uart_putc_raw ( UART_ID , uartval ) ;
-        uartval++ ;
-        if ( uartval == 250 ) uartval = 0 ;*/
+    while ( 1 ) {
+
+        set_Payload_Data ( &Payload , POT_X_PIN ) ;
 
         // Send the packet to the Receiver's payload address
         success = RF24.send_packet ( &Payload , sizeof ( payload_t ) ) ;
-        //printf ( "%d - %s\n" , ( uint8_t ) success , ( success ) ? "ON---" : "      OFF" ) ;
 
         if ( charge_print ) {
             update_Car_Status ( &OLED , car_connected , charge_state ) ;

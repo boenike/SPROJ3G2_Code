@@ -48,14 +48,15 @@ int main ( void ) {
 
     hard_assert ( stdio_init_all ( ) ) ;    // Initialize all present standard stdio types
 
-    gpio_init ( PICO_DEFAULT_LED_PIN ) ;
-    gpio_set_dir ( PICO_DEFAULT_LED_PIN , GPIO_OUT ) ;
-    gpio_put ( PICO_DEFAULT_LED_PIN , 0 ) ;
+    //gpio_init ( PICO_DEFAULT_LED_PIN ) ;
+    //gpio_set_dir ( PICO_DEFAULT_LED_PIN , GPIO_OUT ) ;
+    //gpio_put ( PICO_DEFAULT_LED_PIN , 0 ) ;
 
     servo_init ( SERVO_PIN ) ;
 
     uint16_t rf_setup = nRF24_Setup ( &RF24 , &RF_Pins , &RF_Config , ACK_OFF ,
         PRX , sizeof ( payload_t ) , ( data_pipe_t ) payload_pipe , PAYLOAD_ADDRESS ) ;
+        
     hard_assert ( rf_setup == RF_SETUP_OK ) ;
 
     while ( 1 ) {
@@ -68,14 +69,14 @@ int main ( void ) {
         if ( ( currentTime - prevTime ) > INTERVAL_LIMIT && !car_stopped ) {
             car_stopped = 1 ;
             set_servo_angle(INIT_ANGLE , SERVO_PIN ) ;
-            gpio_put ( PICO_DEFAULT_LED_PIN , 1 ) ;
+            //gpio_put ( PICO_DEFAULT_LED_PIN , 1 ) ;
         }
 
         if ( RF24.is_packet ( &payload_pipe ) ) {
             car_stopped = 0 ;
             success = RF24.read_packet ( &Payload , sizeof ( payload_t ) ) ;
             prevTime = to_ms_since_boot ( get_absolute_time ( ) ) ;
-            gpio_put ( PICO_DEFAULT_LED_PIN , Payload.direction ) ;
+            //gpio_put ( PICO_DEFAULT_LED_PIN , Payload.direction ) ;
             set_servo_angle ( Payload.servo_angle , SERVO_PIN ) ;
         }
     }
