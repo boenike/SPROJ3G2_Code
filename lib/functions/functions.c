@@ -10,6 +10,8 @@
 #include "ssd1306.h"
 #include "functions.h"
 
+#define RF_HI
+
 // Address of Data Pipe 0 - based on the datasheet of nRF24L01
 const uint8_t *PAYLOAD_ADDRESS = ( const uint8_t [ ] ) { 0xE7 , 0xD3 , 0xF0 , 0x35 , 0x77 } ;
 uint8_t payload_pipe = 0 ;  // Selected payload pipe
@@ -30,8 +32,16 @@ pin_manager_t RF_Pins = {
 } ;
 
 nrf_manager_t RF_Config = {
-    // RF Channel in the ISM band
-    .channel = RF_CHANNEL ,
+    // RF Channel in the 2.4GHz ISM band
+    // Setting different channels based on which specific RF model is used (nRF24L01 or nRF24L01+PA/LNA)
+
+    #if defined(RF_HI)
+    .channel = RF_CHANNEL_HI ,
+    #endif
+
+    #if defined(RF_LO)
+    .channel = RF_CHANNEL_LO ,
+    #endif
 
     // Address Width: AW_3_BYTES, AW_4_BYTES, AW_5_BYTES
     .address_width = AW_5_BYTES ,
@@ -49,7 +59,7 @@ nrf_manager_t RF_Config = {
     .retr_count = ARC_10RT ,
 
     // Retransmission Delay: ARD_250US, ARD_500US, ARD_750US, ARD_1000US
-    .retr_delay = ARD_500US
+    .retr_delay = ARD_750US
 } ;
 
 int32_t convertInterval ( int32_t x , int32_t in_min , int32_t in_max , int32_t out_min , int32_t out_max ) {
@@ -150,22 +160,39 @@ uint16_t nRF24_Setup ( nrf_client_t *RF24_ptr , pin_manager_t *RF24_pins_ptr , n
     return ret ;
 }
 
-void set_Payload_Data ( payload_t *payload , uint8_t pot_x_pin ) {
+void set_Payload_Data ( payload_t *payload , uint8_t pot_x_pin , uint8_t pot_y_pin ) {
+    int8_t speed_magnitude ;
     uint16_t Pot_X_Val , Pot_Y_Val ;
     const uint16_t THRESHOLD  = ADC_MAX / 2 ;
-    const uint16_t LOW_LIMIT  = THRESHOLD - TOLERANCE ;
-    const uint16_t HIGH_LIMIT = THRESHOLD + TOLERANCE ;
+    const uint16_t LOW_LIMIT_THRESH  = THRESHOLD - TOLERANCE ;
+    const uint16_t HIGH_LIMIT_THRESH = THRESHOLD + TOLERANCE ;
 
     Pot_X_Val = read_ADC ( pot_x_pin ) ;
+    Pot_Y_Val = read_ADC ( pot_y_pin ) ;
 
-    if ( Pot_X_Val >= HIGH_LIMIT || Pot_X_Val <= LOW_LIMIT ) {
-        payload->servo_angle = ( uint8_t ) convertInterval ( ( int32_t ) Pot_X_Val , ADC_MIN , ADC_MAX , MIN_ANGLE , MAX_ANGLE ) ;
-        payload->direction = ( Pot_X_Val > THRESHOLD ) ? 1 : 0 ;
+    if ( Pot_X_Val > HIGH_LIMIT_THRESH ) {
+        payload->servo_angle = ( uint8_t ) convertInterval ( ( int32_t ) Pot_X_Val , ( int32_t ) HIGH_LIMIT_THRESH , ADC_MAX , INIT_ANGLE , MAX_ANGLE ) ;
     }
 
-    else {
+    else if ( Pot_X_Val < LOW_LIMIT_THRESH ) {
+        payload->servo_angle = ( uint8_t ) convertInterval ( ( int32_t ) Pot_X_Val , ADC_MIN , ( int32_t ) LOW_LIMIT_THRESH , MIN_ANGLE , INIT_ANGLE ) ;
+    }
+
+    else if ( Pot_X_Val <= HIGH_LIMIT_THRESH && Pot_X_Val >= LOW_LIMIT_THRESH ) {  // Left thumbstick in center - set default values
         payload->servo_angle = INIT_ANGLE ;
-        payload->direction = 1 ;
+    }
+
+    if ( Pot_Y_Val > HIGH_LIMIT_THRESH ) {      // Forward
+        payload->speed_and_direction = ( uint8_t ) convertInterval ( ( int32_t ) Pot_Y_Val , ( int32_t ) HIGH_LIMIT_THRESH , ADC_MAX , HALT , SPEED_MAX_FORWARD ) ;
+    }
+
+    else if ( Pot_Y_Val < LOW_LIMIT_THRESH ) {  // Backward
+        payload->speed_and_direction = ( uint8_t ) convertInterval ( ( int32_t ) Pot_Y_Val , ADC_MIN , ( int32_t ) LOW_LIMIT_THRESH , SPEED_MAX_BACKWARD , HALT ) ;
+    }
+
+    else if ( Pot_Y_Val <= HIGH_LIMIT_THRESH && Pot_Y_Val >= LOW_LIMIT_THRESH ) { 
+        // Right thumbstick in center - set default values - stop and forward direction
+        payload->speed_and_direction = HALT ;
     }
 }
 
@@ -173,10 +200,9 @@ uint8_t OLED_Setup ( oled_pins_t *oled_pins , ssd1306_t *oled_ptr ) {
     uint8_t setup_success = 0 ;
     i2c_inst_t *current_i2c_instance ;
 
-    if ( oled_pins->SDA % 4 == 0 ) current_i2c_instance = i2c0 ;
-    else current_i2c_instance = i2c1 ;
+    current_i2c_instance = ( oled_pins->SDA % 4 == 0 ) ? i2c0 : i2c1 ;
 
-    uint rate = i2c_init ( current_i2c_instance , I2C_BAUDRATE ) ;
+    uint __unused rate = i2c_init ( current_i2c_instance , I2C_BAUDRATE ) ;
 
     gpio_set_function ( oled_pins->SDA , GPIO_FUNC_I2C ) ;
     gpio_set_function ( oled_pins->SCL , GPIO_FUNC_I2C ) ;
@@ -184,7 +210,7 @@ uint8_t OLED_Setup ( oled_pins_t *oled_pins , ssd1306_t *oled_ptr ) {
     gpio_pull_up ( oled_pins->SCL ) ;
 
     oled_ptr->external_vcc = false ;
-    setup_success += ( uint8_t ) ssd1306_init ( oled_ptr , OLED_WIDTH , OLED_HEIGHT , OLED_ADDRESS , current_i2c_instance ) ;
+    setup_success = ( uint8_t ) ssd1306_init ( oled_ptr , OLED_WIDTH , OLED_HEIGHT , OLED_ADDRESS , current_i2c_instance ) ;
     ssd1306_poweron ( oled_ptr ) ;
     ssd1306_clear ( oled_ptr ) ;
     ssd1306_show ( oled_ptr ) ;
@@ -192,33 +218,28 @@ uint8_t OLED_Setup ( oled_pins_t *oled_pins , ssd1306_t *oled_ptr ) {
     return setup_success ;
 }
 
-void draw_Initial_Texts ( ssd1306_t *oled_ptr ) {
-    ssd1306_draw_string ( oled_ptr , 0 , 0 , FONT_SCALE , "Car:" ) ;
-    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "Bat:" ) ;
+/*void draw_Initial_Texts ( ssd1306_t *oled_ptr ) {
+    ssd1306_draw_string ( oled_ptr , 0 , 0 , FONT_SCALE , "CAR:" ) ;
+    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "CHRG:" ) ;
     ssd1306_show ( oled_ptr ) ;
-}
+}*/
 
 void update_Car_Status ( ssd1306_t *oled_ptr , uint8_t car_status , uint8_t charging_status ) {
 
     ssd1306_clear ( oled_ptr ) ;
-    ssd1306_draw_string ( oled_ptr , 0 , 0 , FONT_SCALE , "Car:" ) ;
-    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "Charge:" ) ;
+    ssd1306_draw_string ( oled_ptr , 0 ,  0 , FONT_SCALE , "CAR:" ) ;
+    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "BAT:" ) ;
 
-    ssd1306_draw_string ( oled_ptr , 60 , 0 , FONT_SCALE , ( car_status ) ? "ON" : "OFF" ) ;
-    ssd1306_draw_string ( oled_ptr , 90 , 28 , FONT_SCALE , ( charging_status ) ? "Yes" : "NO" ) ;
+    ssd1306_draw_string ( oled_ptr , 50 , 0 , FONT_SCALE , ( car_status ) ? "ON" : "OFF" ) ;
+    ssd1306_draw_string ( oled_ptr , 45 , 28 , FONT_SCALE , ( charging_status ) ? "CHRG" : "DISCHRG" ) ;
 
     ssd1306_show ( oled_ptr ) ;
 }
 
-void UART_Setup ( uart_inst_t *chosen_uart_instance_id , uint chosen_baudrate , uint RX_pin , uint TX_pin , irq_handler_t rx_isr ) {
+uint8_t UART_Setup ( uart_inst_t *chosen_uart_instance_id , uint chosen_baudrate , uint RX_pin , uint TX_pin ) {
 
     // Set up the UART with the selected baudrate
-    uint __unused actual_baudrate = uart_init ( chosen_uart_instance_id , chosen_baudrate ) ;
-
-    //uart_write_blocking
-    //uart_putc_raw
-    //uart_putc
-    //uart_puts
+    uint actual_baudrate = uart_init ( chosen_uart_instance_id , chosen_baudrate ) ;
 
     // Set the TX and RX pins by using the function select on the GPIO
     gpio_set_function ( TX_pin , UART_FUNCSEL_NUM ( chosen_uart_instance_id , TX_pin ) ) ;
@@ -233,6 +254,10 @@ void UART_Setup ( uart_inst_t *chosen_uart_instance_id , uint chosen_baudrate , 
     // Turn on FIFO on specified UART port
     uart_set_fifo_enabled ( chosen_uart_instance_id , true ) ;
 
+    return ( actual_baudrate ) ? 1 : 0 ;
+}
+
+void Setup_UART_RX_IRQ ( uart_inst_t *chosen_uart_instance_id , irq_handler_t rx_isr ) {
     // Select correct interrupt for the UART port used
     uint UART_IRQ = ( chosen_uart_instance_id == uart0 ) ? UART0_IRQ : UART1_IRQ ;
 
