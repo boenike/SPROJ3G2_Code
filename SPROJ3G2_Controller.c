@@ -29,14 +29,13 @@
 #include "nrf24_driver.h"
 #include "ssd1306.h"
 #include "functions.h"
-//#include "hardware/timer.h"
-//#include "pico/multicore.h"
 
 uint8_t ADC_Pins [ ] = { 26 , 27 } ;
 uint8_t retr_lim_reached = 0 , RT_count = 0 ;
 volatile uint8_t car_connected = 0 , charge_state = 0 , rec_val , charge_print = 0 ;
 
-payload_t Payload = { .direction = 1 , .servo_angle = INIT_ANGLE } ;
+// Initial values - middlepoint for servo - forward mode and halt for the motor
+payload_t Payload = { .servo_angle = INIT_ANGLE , .speed_and_direction = 0 } ;
 
 ssd1306_t OLED ;
 nrf_client_t RF24 ;
@@ -47,8 +46,6 @@ void UART_RX_ISR ( void ) {
         rec_val = uart_getc ( UART_ID ) ;
         charge_state = ( rec_val ) ? 1 : 0 ;
         charge_print = 1 ;
-        //led = led ? 0 : 1 ;
-        //gpio_put ( 7 , led ) ;
     }
 }
 
@@ -56,7 +53,9 @@ int main ( void ) {
 
     hard_assert ( stdio_init_all ( ) ) ;
 
-    UART_Setup ( UART_ID , UART_BAUDRATE , UART_RX_PIN , UART_TX_PIN , UART_RX_ISR ) ;
+    hard_assert ( UART_Setup ( UART_ID , UART_BAUDRATE , UART_RX_PIN , UART_TX_PIN ) ) ;
+
+    Setup_UART_RX_IRQ ( UART_ID , UART_RX_ISR ) ;
 
     hard_assert ( ADC_Setup ( ADC_Pins , sizeof ( ADC_Pins ) ) ) ;
 
@@ -67,11 +66,8 @@ int main ( void ) {
         
     hard_assert ( rf_setup == RF_SETUP_OK ) ;
 
-    draw_Initial_Texts ( &OLED ) ;
-
     while ( 1 ) {
-
-        set_Payload_Data ( &Payload , POT_X_PIN ) ;
+        set_Payload_Data ( &Payload , POT_X_PIN , POT_Y_PIN ) ;
 
         // Send the packet to the Receiver's payload address
         success = RF24.send_packet ( &Payload , sizeof ( payload_t ) ) ;

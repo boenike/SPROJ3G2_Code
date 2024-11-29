@@ -36,7 +36,8 @@
 //#include "hardware/irq.h"
 //#include "pico/multicore.h"
 
-payload_t Payload = { .direction = 1 , .servo_angle = INIT_ANGLE } ;
+// Initial values - middlepoint for servo - forward mode and halt for the motor
+payload_t Payload = { .servo_angle = INIT_ANGLE , .speed_and_direction = 0 } ;
 
 uint8_t car_stopped = 0 ;
 uint32_t currentTime , prevTime = 0 ;
@@ -48,9 +49,7 @@ int main ( void ) {
 
     hard_assert ( stdio_init_all ( ) ) ;    // Initialize all present standard stdio types
 
-    //gpio_init ( PICO_DEFAULT_LED_PIN ) ;
-    //gpio_set_dir ( PICO_DEFAULT_LED_PIN , GPIO_OUT ) ;
-    //gpio_put ( PICO_DEFAULT_LED_PIN , 0 ) ;
+    hard_assert ( UART_Setup ( UART_ID , UART_BAUDRATE , UART_RX_PIN , UART_TX_PIN ) ) ;
 
     servo_init ( SERVO_PIN ) ;
 
@@ -68,16 +67,16 @@ int main ( void ) {
 
         if ( ( currentTime - prevTime ) > INTERVAL_LIMIT && !car_stopped ) {
             car_stopped = 1 ;
-            set_servo_angle(INIT_ANGLE , SERVO_PIN ) ;
-            //gpio_put ( PICO_DEFAULT_LED_PIN , 1 ) ;
+            set_servo_angle ( INIT_ANGLE , SERVO_PIN ) ;
+            uart_putc_raw ( UART_ID , HALT ) ;
         }
 
         if ( RF24.is_packet ( &payload_pipe ) ) {
             car_stopped = 0 ;
             success = RF24.read_packet ( &Payload , sizeof ( payload_t ) ) ;
             prevTime = to_ms_since_boot ( get_absolute_time ( ) ) ;
-            //gpio_put ( PICO_DEFAULT_LED_PIN , Payload.direction ) ;
             set_servo_angle ( Payload.servo_angle , SERVO_PIN ) ;
+            uart_putc_raw ( UART_ID , Payload.speed_and_direction ) ;
         }
     }
     return 0 ;
