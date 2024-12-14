@@ -10,7 +10,7 @@
 #include "ssd1306.h"
 #include "functions.h"
 
-#define RF_HI
+#define RF_HI   // Choose between RF_HI or RF_LO -> depending on whether you want to use the PA+LNA or the standard nRF24L01 models
 
 // Address of Data Pipe 0 - based on the datasheet of nRF24L01
 const uint8_t *PAYLOAD_ADDRESS = ( const uint8_t [ ] ) { 0xE7 , 0xD3 , 0xF0 , 0x35 , 0x77 } ;
@@ -31,15 +31,16 @@ pin_manager_t RF_Pins = {
     .ce   = 6    // Chip Enable
 } ;
 
+// RF module configurations
 nrf_manager_t RF_Config = {
     // RF Channel in the 2.4GHz ISM band
     // Setting different channels based on which specific RF model is used (nRF24L01 or nRF24L01+PA/LNA)
 
-    #if defined(RF_HI)
+    #ifdef RF_HI
     .channel = RF_CHANNEL_HI ,
     #endif
 
-    #if defined(RF_LO)
+    #ifdef RF_LO
     .channel = RF_CHANNEL_LO ,
     #endif
 
@@ -62,10 +63,12 @@ nrf_manager_t RF_Config = {
     .retr_delay = ARD_750US
 } ;
 
+// Function to convert a value from one range of values to another
 int32_t convertInterval ( int32_t x , int32_t in_min , int32_t in_max , int32_t out_min , int32_t out_max ) {
   return ( x - in_min ) * ( out_max - out_min ) / ( in_max - in_min ) + out_min ;
 }
 
+// Function to set up the required ADC pins whilst checking them for validity
 uint8_t ADC_Setup ( uint8_t *input_pins , uint8_t input_length ) {
     uint8_t success = 0 ;
     adc_init ( ) ;
@@ -81,6 +84,7 @@ uint8_t ADC_Setup ( uint8_t *input_pins , uint8_t input_length ) {
     return ( success == input_length ) ? 1 : 0 ;
 }
 
+// Function to read the value of the desired ADC pin
 uint16_t read_ADC ( uint8_t pin ) {
     adc_select_input ( pin - ADC_REF_PIN ) ;
     return adc_read ( ) ;
@@ -103,13 +107,13 @@ uint16_t nRF24_Setup ( nrf_client_t *RF24_ptr , pin_manager_t *RF24_pins_ptr , n
     state = RF24_ptr->initialise ( RF24_config_ptr ) ;                  // Initialize the nRF24 module with the stated configuration
     if ( state == SPI_MNGR_OK ) { ret |= 1 << 2 ; }
 
-    state = RF24_ptr->rf_data_rate ( RF24_config_ptr->data_rate ) ;                   // Set the specified air transfer rate
+    state = RF24_ptr->rf_data_rate ( RF24_config_ptr->data_rate ) ;     // Set the specified air transfer rate
     if ( state == SPI_MNGR_OK ) { ret |= 1 << 3 ; }
 
-    state = RF24_ptr->rf_power ( RF24_config_ptr->power ) ;                           // Set the specified antenna power
+    state = RF24_ptr->rf_power ( RF24_config_ptr->power ) ;             // Set the specified antenna power
     if ( state == SPI_MNGR_OK ) { ret |= 1 << 4 ; }
 
-    state = RF24_ptr->payload_size ( payload_pipe , payload_size ) ;     // Set the size of the payload message
+    state = RF24_ptr->payload_size ( payload_pipe , payload_size ) ;    // Set the size of the payload message
     if ( state == SPI_MNGR_OK ) { ret |= 1 << 5 ; }
 
     switch ( mode ) {
@@ -217,12 +221,6 @@ uint8_t OLED_Setup ( oled_pins_t *oled_pins , ssd1306_t *oled_ptr ) {
     
     return setup_success ;
 }
-
-/*void draw_Initial_Texts ( ssd1306_t *oled_ptr ) {
-    ssd1306_draw_string ( oled_ptr , 0 , 0 , FONT_SCALE , "CAR:" ) ;
-    ssd1306_draw_string ( oled_ptr , 0 , 28 , FONT_SCALE , "CHRG:" ) ;
-    ssd1306_show ( oled_ptr ) ;
-}*/
 
 void update_Car_Status ( ssd1306_t *oled_ptr , uint8_t car_status , uint8_t charging_status ) {
 
