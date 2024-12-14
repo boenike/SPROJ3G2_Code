@@ -3,8 +3,8 @@
  * Institution: University of Southern Denmark (SDU)
  * Campus: Sonderborg
  * File: SPROJ3G2_Controller.c
- * Authors: Bence Toth and Iliya Iliev
- * Date: 07/11/2024
+ * Authors: Bence Toth
+ * Date: 14/12/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040

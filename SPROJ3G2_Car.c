@@ -4,7 +4,7 @@
  * Campus: Sonderborg
  * File: SPROJ3G2_Car.c
  * Authors: Bence Toth and Iliya Iliev
- * Date: 07/11/2024
+ * Date: 14/12/2024
  * Course: BEng in Electronics
  * Semester: 3rd
  * Platform: RP2040
@@ -30,11 +30,6 @@
 #include "functions.h"
 #include "servo_control.h"
 #include "hardware/i2c.h"
-//#include "ssd1306.h"
-//#include "hardware/timer.h"
-//#include "hardware/uart.h"
-//#include "hardware/irq.h"
-//#include "pico/multicore.h"
 
 // Initial values - middlepoint for servo - forward mode and halt for the motor
 payload_t Payload = { .servo_angle = INIT_ANGLE , .speed_and_direction = 0 } ;
