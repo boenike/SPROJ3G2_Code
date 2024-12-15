@@ -1,3 +1,19 @@
+/**
+ * Title: Semester Project 3 Group 2 - Functions source file
+ * Institution: University of Southern Denmark (SDU)
+ * Campus: Sonderborg
+ * File: SPROJ3G2_Controller.c
+ * Authors: Bence Toth
+ * Date: 15/12/2024
+ * Course: BEng in Electronics
+ * Semester: 3rd
+ * Platform: RP2040
+ * RF module: nRF24L01+
+ * OLED module: SSD1306 128x32 I2C
+ * RF library:   https://github.com/andyrids/pico-nrf24
+ * OLED library: https://github.com/daschr/pico-ssd1306
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -165,7 +181,6 @@ uint16_t nRF24_Setup ( nrf_client_t *RF24_ptr , pin_manager_t *RF24_pins_ptr , n
 }
 
 void set_Payload_Data ( payload_t *payload , uint8_t pot_x_pin , uint8_t pot_y_pin ) {
-    int8_t speed_magnitude ;
     uint16_t Pot_X_Val , Pot_Y_Val ;
     const uint16_t THRESHOLD  = ADC_MAX / 2 ;
     const uint16_t LOW_LIMIT_THRESH  = THRESHOLD - TOLERANCE ;
@@ -187,11 +202,11 @@ void set_Payload_Data ( payload_t *payload , uint8_t pot_x_pin , uint8_t pot_y_p
     }
 
     if ( Pot_Y_Val > HIGH_LIMIT_THRESH ) {      // Forward
-        payload->speed_and_direction = ( uint8_t ) convertInterval ( ( int32_t ) Pot_Y_Val , ( int32_t ) HIGH_LIMIT_THRESH , ADC_MAX , HALT , SPEED_MAX_FORWARD ) ;
+        payload->speed_and_direction = ( int8_t ) convertInterval ( ( int32_t ) Pot_Y_Val , ( int32_t ) HIGH_LIMIT_THRESH , ADC_MAX , HALT , SPEED_MAX_FORWARD ) ;
     }
 
     else if ( Pot_Y_Val < LOW_LIMIT_THRESH ) {  // Backward
-        payload->speed_and_direction = ( uint8_t ) convertInterval ( ( int32_t ) Pot_Y_Val , ADC_MIN , ( int32_t ) LOW_LIMIT_THRESH , SPEED_MAX_BACKWARD , HALT ) ;
+        payload->speed_and_direction = ( int8_t ) convertInterval ( ( int32_t ) Pot_Y_Val , ADC_MIN , ( int32_t ) LOW_LIMIT_THRESH , SPEED_MAX_BACKWARD , HALT ) ;
     }
 
     else if ( Pot_Y_Val <= HIGH_LIMIT_THRESH && Pot_Y_Val >= LOW_LIMIT_THRESH ) { 
