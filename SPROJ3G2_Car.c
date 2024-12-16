@@ -1,16 +1,15 @@
 /**
- * Title: Semester Project 3 Group 2 - Car code
- * Institution: University of Southern Denmark (SDU)
- * Campus: Sonderborg
- * File: SPROJ3G2_Car.c
- * Authors: Bence Toth and Iliya Iliev
- * Date: 14/12/2024
- * Course: BEng in Electronics
- * Semester: 3rd
- * Platform: RP2040
- * RF module: nRF24L01+
- * OLED module: SSD1306 128x32 I2C
- * RF library:   https://github.com/andyrids/pico-nrf24
+ * Title:           Semester Project 3 Group 2 - Car PRX source code
+ * Institution:     University of Southern Denmark (SDU)
+ * Campus:          Sønderborg
+ * File:            SPROJ3G2_Car.c
+ * Authors:         Bence Tóth
+ * Date:            16/12/2024
+ * Course:          BEng in Electronics
+ * Semester:        3rd
+ * Platform:        Raspberry Pi RP2040 C SDK
+ * RF module:       nRF24L01 PA/LNA
+ * RF library:      https://github.com/andyrids/pico-nrf24
  */
 
 // Include necessary libraries
@@ -21,11 +20,10 @@
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include "hardware/gpio.h"
-#include "hardware/adc.h"
 #include "hardware/spi.h"
 #include "hardware/pwm.h"
+#include "hardware/uart.h"
 #include "hardware/clocks.h"
-#include "hardware/i2c.h"
 #include "nrf24_driver.h"
 #include "functions.h"
 #include "servo_control.h"

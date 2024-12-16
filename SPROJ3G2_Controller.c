@@ -1,17 +1,17 @@
 /**
- * Title: Semester Project 3 Group 2 - Controller code
- * Institution: University of Southern Denmark (SDU)
- * Campus: Sonderborg
- * File: SPROJ3G2_Controller.c
- * Authors: Bence Toth
- * Date: 14/12/2024
- * Course: BEng in Electronics
- * Semester: 3rd
- * Platform: RP2040
- * RF module: nRF24L01+
- * OLED module: SSD1306 128x32 I2C
- * RF library:   https://github.com/andyrids/pico-nrf24
- * OLED library: https://github.com/daschr/pico-ssd1306
+ * Title:           Semester Project 3 Group 2 - Controller PTX source code
+ * Institution:     University of Southern Denmark (SDU)
+ * Campus:          Sønderborg
+ * File:            SPROJ3G2_Controller.c
+ * Authors:         Bence Tóth
+ * Date:            16/12/2024
+ * Course:          BEng in Electronics
+ * Semester:        3rd
+ * Platform:        Raspberry Pi RP2040 C SDK
+ * RF module:       nRF24L01 PA/LNA
+ * OLED module:     SSD1306 128x32 I2C
+ * RF library:      https://github.com/andyrids/pico-nrf24
+ * OLED library:    https://github.com/daschr/pico-ssd1306
  */
 
 // Include necessary libraries
