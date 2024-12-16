@@ -15,7 +15,6 @@
 // Include necessary libraries
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdbool.h>
 #include "pico/stdlib.h"
 #include "pico/time.h"
@@ -25,9 +24,8 @@
 #include "hardware/uart.h"
 #include "hardware/clocks.h"
 #include "nrf24_driver.h"
-#include "functions.h"
 #include "servo_control.h"
-#include "hardware/i2c.h"
+#include "functions.h"
 
 // Initial values - middlepoint for servo - forward mode and halt for the motor
 payload_t Payload = { .servo_angle = INIT_ANGLE , .speed_and_direction = 0 } ;
