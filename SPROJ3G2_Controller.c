@@ -4,7 +4,7 @@
  * Campus:          Sønderborg
  * File:            SPROJ3G2_Controller.c
  * Authors:         Bence Tóth
- * Date:            16/12/2024
+ * Date:            23/01/2025
  * Course:          BEng in Electronics
  * Semester:        3rd
  * Platform:        Raspberry Pi RP2040 C SDK
@@ -78,13 +78,16 @@ int main ( void ) {
 
         switch ( success ) {
             case NRF_MNGR_OK :
+            {
                 if ( !car_connected ) {
                     car_connected = 1 ;
                     retr_lim_reached = 0 ;
                     update_Car_Status ( &OLED , car_connected , charge_state ) ;
                 }
                 break ;
+            }
             case ERROR :
+            {
                 if ( !retr_lim_reached ) {
                     RT_count++ ;
                     if ( RT_count == MAX_RT_TRY ) {
@@ -95,6 +98,7 @@ int main ( void ) {
                     }
                 }
                 break ;
+            }
             default : break ;
         }
     }
