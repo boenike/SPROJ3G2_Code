@@ -4,7 +4,7 @@
  * Campus:          Sønderborg
  * File:            functions.h
  * Authors:         Bence Tóth
- * Date:            16/12/2024
+ * Date:            23/01/2025
  * Course:          BEng in Electronics
  * Semester:        3rd
  * Platform:        Raspberry Pi RP2040 C SDK
@@ -36,10 +36,10 @@
 #define PARITY           UART_PARITY_NONE
 
 // Servo configs
-#define SERVO_PIN             8
-#define INIT_ANGLE   50     // in degrees
-#define MAX_ANGLE    70     // in degrees
-#define MIN_ANGLE    30     // in degrees
+#define SERVO_PIN   8
+#define INIT_ANGLE 90     // in degrees
+#define MAX_ANGLE 110     // in degrees
+#define MIN_ANGLE  70     // in degrees
 
 // Thumbstick configs
 #define ADC_REF_PIN   26
@@ -60,7 +60,7 @@
 #define RF_CHANNEL_LO                  50  // 2.45 GHz carrier frequency for the low-range RF modules
 #define RF_CHANNEL_HI                 100  // 2.50 GHz carrier frequency for the high-range RF modules
 #define INTERVAL_LIMIT                250  // Defines the maximum time interval between consecutive received data packets for the Car
-#define MAX_RT_TRY                     20  // Defines the maximum Retransmission count of the Controller
+#define MAX_RT_TRY                     50  // Defines the maximum Retransmission count of the Controller
 #define RF_SETUP_OK    0b0000001111111111  // Checks if all RF setup functions returned the correct values
 
 // SSD1306 OLED configs
@@ -68,7 +68,7 @@
 #define OLED_HEIGHT      32     // in pixels
 #define OLED_ADDRESS   0x3C     // Default I2C address for an SSD1306
 #define I2C_BAUDRATE 400000     // 400 kHz I2C baudrate
-#define FONT_SCALE        2     // The value of 1 is miniscule, 3 is too large...
+#define FONT_SCALE        1     // The value of 1 is miniscule, 3 is too large...
 
 // The payload structure for transmission
 typedef struct {
